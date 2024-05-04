@@ -51,8 +51,12 @@ def setup_env():
         os.makedirs(data_folder + "/" + em, exist_ok=True)
 
     # Using glob.glob to get a list of files that match a pattern
-    for path in glob.glob('**/*.mp4', recursive=True):
-        print(path)
+    for path in glob.glob('**/01*.mp4', recursive=True):
+        vid_dir=data_folder+"/"+emotions[path[-18:-16]]+path[-25:-4]
+        os.makedirs(vid_dir, exist_ok=True)
+        subprocess.call(["ffmpeg", "-i", path,"-vf",f'fps={fps}, scale=256:256', f"{vid_dir}/image_%04d.jpg"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        subprocess.call(["ffmpeg", "-y", "-i", path, f"{vid_dir}/audio.mp3"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
 
 
 
