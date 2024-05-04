@@ -1,6 +1,7 @@
 import os
 import shutil
 import glob
+import subprocess
 import torch
 import torch.utils.data
 from torchvision import datasets, transforms
@@ -16,7 +17,7 @@ import random
 
 
 seed = 42
-
+fps=30
 def setup_env():
     use_cuda = torch.cuda.is_available()
 
