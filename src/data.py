@@ -8,8 +8,32 @@ from .helpers import compute_mean_and_std, get_data_location
 import matplotlib.pyplot as plt
 import torchvision.transforms.v2 as T
 from torch.utils.data import default_collate
+from torchvision.io import read_image
+import os
+# MOHANAD
+class  RAVDESSDataset(torch.utils.data.Dataset):
+    def __init__(self,images_dir, transforms=None):
+        self.images_dir=images_dir+'/'+prefix
+
+        self.transforms = transforms
+        # load all image files, sorting them to
+        # ensure that they are aligned
+        self.imgs = list(sorted(os.listdir(self.images_dir)))
 
 
+    def __getitem__(self, idx):
+        # load images and masks
+        img_path = os.path.join(self.images_dir, self.imgs[idx])
+        img = read_image(img_path)
+
+
+
+        if self.transforms:
+            img = self.transforms(img)
+        return img
+
+    def __len__(self):
+        return len(self.imgs)
 
 def get_data_loaders(
     batch_size: int = 32, num_classes: int =1000, num_workers: int = -1, limit: int = -1
@@ -93,17 +117,11 @@ def get_data_loaders(
         ]),
     }
 
-    # Create train and validation datasets
-    train_data = datasets.ImageFolder(
-        base_path / "train",
-        transform=data_transforms["train"]
-    )
+    # MOHANAD Create train and validation datasets
+    train_data = RAVDESSDataset()
     # The validation dataset is a split from the train_one_epoch dataset, so we read
     # from the same folder, but we apply the transforms for validation
-    valid_data = datasets.ImageFolder(
-        base_path / "val",
-        transform=data_transforms["valid"]
-    )
+    valid_data = RAVDESSDataset()
    
     # prepare data loaders
     def collate_fn(batch):
