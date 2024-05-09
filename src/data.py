@@ -4,39 +4,59 @@ from pathlib import Path
 from torchvision import datasets
 import multiprocessing
 import numpy as np
-from .helpers import compute_mean_and_std, get_data_location
+import pandas as pd
+from .helpers import compute_mean_and_std, get_data_location, seed, every_s, audio_sr
 import matplotlib.pyplot as plt
 import torchvision.transforms.v2 as T
 from torch.utils.data import default_collate
 from torchvision.io import read_image
+from sklearn.model_selection import train_test_split
 import os
-# MOHANAD---------------------------------------------------------
-class  RAVDESSDataset(torch.utils.data.Dataset):
-    def __init__(self,images_dir, transforms=None):
-        self.images_dir=images_dir+'/'+prefix
 
+class  RAVDESSDataset(torch.utils.data.Dataset):
+    def __init__(self,df, is_image=True, is_mel=True,transforms=None):
+        self.df=df
+        self.is_image = is_image
+        self.is_mel = is_mel
         self.transforms = transforms
-        # load all image files, sorting them to
-        # ensure that they are aligned
-        self.imgs = list(sorted(os.listdir(self.images_dir)))
+
+
 
 
     def __getitem__(self, idx):
-        # load images and masks
-        img_path = os.path.join(self.images_dir, self.imgs[idx])
-        img = read_image(img_path)
+        # load images 
+        target = self.df.iloc[idx]['target']
+        if self.is_image:
+            img_path = self.df.iloc[idx]['image_path']
+            img = read_image(img_path)
+            
+            if self.transforms:
+                img = self.transforms(img)
+            if not self.is_mel:
+                return img, target
+
+
+        data=[img]
+
+
+        if self.is_mel:
+            mel_spec_path = self.df.iloc[idx]['mel_spec_path']
+            mel_spec = np.load(mel_spec_path)
+
+            data.append(mel_spec[:int(every_s*audio_sr)])
+
+        
 
 
 
-        if self.transforms:
-            img = self.transforms(img)
-        return img
+
+        return data, target
 
     def __len__(self):
-        return len(self.imgs)
+        return len(self.df)
 
 def get_data_loaders(
-    batch_size: int = 32, num_classes: int =1000, num_workers: int = -1, limit: int = -1
+    batch_size: int = 32, num_classes: int =1000,valid_size=0.2, num_workers: int = -1, limit: int = -1, is_mel=True, is_image=True
 ):
     """
     Create and returns the train_one_epoch, validation and test data loaders.
@@ -109,12 +129,15 @@ def get_data_loaders(
             T.Normalize(mean=mean, std=std),
         ]),
     }
+    df = pd.read_csv('data/metadata.csv',dtype={'class':'category'})
+    df['target']=df['class'].cat.codes.astype(np.int64)
+    train_df, valid_df = train_test_split(df,
+                                stratify=df['class'],test_size=valid_size,random_state=seed)
 
-    # MOHANAD---------------------------------------------------------
 
     #  Create train and validation datasets
-    train_data = RAVDESSDataset()
-    valid_data = RAVDESSDataset()
+    train_data = RAVDESSDataset(train_df,is_image=is_image, is_mel=is_mel, transforms=data_transforms['train'])
+    valid_data = RAVDESSDataset(valid_df,is_image=is_image, is_mel=is_mel, transforms=data_transforms['valid'])
    
     # prepare data loaders
     def collate_fn(batch):
@@ -128,7 +151,7 @@ def get_data_loaders(
         num_workers=num_workers,
         shuffle=True,
         #sampler=sampler,
-     collate_fn=collate_fn,
+     #collate_fn=collate_fn,
 #        pin_memory=True,
     )
     data_loaders["valid"] = torch.utils.data.DataLoader(

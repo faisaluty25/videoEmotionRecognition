@@ -37,8 +37,8 @@ def get_model_transfer_learning(model_name="resnet18", n_classes=50):
     # Freeze all parameters in the model
     # HINT: loop over all parameters. If "param" is one parameter,
     # "param.requires_grad = False" freezes it
-    for param in model_transfer.parameters():
-        param.requires_grad = False
+    # for param in model_transfer.parameters():
+    #     param.requires_grad = False
     
 
 
@@ -49,9 +49,9 @@ def get_model_transfer_learning(model_name="resnet18", n_classes=50):
 
     # 2. Create a new linear layer with the appropriate number of inputs and
     #    outputs
-    fc=nn.Sequential(
-        nn.Conv2d(num_ftrs,n_classes,1)       
-        ) 
+    fc=nn.Sequential(nn.Flatten(), nn.Linear(num_ftrs,n_classes))
+               
+        
     setattr(model_transfer,classifier, fc)
 
     return model_transfer
