@@ -36,14 +36,14 @@ class  RAVDESSDataset(torch.utils.data.Dataset):
                 return img, target
 
 
-        data=[img]
+        
 
 
         if self.is_mel:
             mel_spec_path = self.df.iloc[idx]['mel_spec_path']
             mel_spec = np.load(mel_spec_path)
 
-            data.append(mel_spec[:int(every_s*audio_sr)])
+            return mel_spec[:int(every_s*audio_sr)][None,], target
 
         
 

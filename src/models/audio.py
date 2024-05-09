@@ -9,7 +9,7 @@ class Model1(nn.Module): #new
 
             
         self.Dconvs=nn.Sequential(
-            nn.Conv2d(3,20,3,2,1),
+            nn.Conv2d(1,20,3,2,1),
             nn.BatchNorm2d(20),
             nn.LeakyReLU(inplace=True),
             SepConv(20,40,3,stride=2,padding=1,growth_factor=4 ,depth_count=3),# Avgpool-> 56 
