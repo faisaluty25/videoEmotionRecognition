@@ -6,7 +6,7 @@ from torchvision.ops import SqueezeExcitation
 
 
 
-def get_model_transfer_learning(model_name="resnet18", n_classes=50):
+def get_model_transfer_learning(model_name="resnet18", n_classes=50, with_head=True):
 
     # Get the requested architecture
     if hasattr(t_models, model_name):
@@ -51,7 +51,7 @@ def get_model_transfer_learning(model_name="resnet18", n_classes=50):
 
     # 2. Create a new linear layer with the appropriate number of inputs and
     #    outputs
-    fc=nn.Sequential(nn.Flatten(), nn.Linear(num_ftrs,n_classes))
+    fc=nn.Sequential(nn.Flatten(), nn.Linear(num_ftrs,n_classes)) if with_head else nn.Identity()
                
         
     setattr(model_transfer,classifier, fc)
