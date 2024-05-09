@@ -10,6 +10,16 @@ from torch.utils.tensorboard import SummaryWriter
 
 device= "cuda" if torch.cuda.is_available()else "cpu"
 
+def to_device(data, label):
+    if isinstance(data, torch.Tensor):
+        return data.to(device), label.to(device)
+
+    for i,d in enumerate(data):
+        data[i]=d.to(device)
+    label=label.to(device)
+    return data, label
+    
+
 
 def train_one_epoch(train_dataloader, model, optimizer, loss, scaler, accumulation_steps):
     """
@@ -30,12 +40,10 @@ def train_one_epoch(train_dataloader, model, optimizer, loss, scaler, accumulati
             leave=True,
             ncols=80,
         ):
-            # move data to GPU
-        if torch.cuda.is_available():
-            data, target = data.cuda(), target.cuda()
 
+        # move data to GPU
+        data, target = to_device(data, target)
 
-            
             
 
         if scaler:
@@ -90,8 +98,8 @@ def valid_one_epoch(valid_dataloader, model, loss):
             ncols=80,
         ):
             # move data to GPU
-            if torch.cuda.is_available():
-                data, target = data.cuda(), target.cuda()
+            data, target = to_device(data, target)
+
 
             # 1. forward pass: compute predicted outputs by passing inputs to the model
             output  = model(data)
@@ -231,8 +239,8 @@ def one_epoch_test(test_dataloader, model, loss):
                 ncols=80
         ):
             # move data to GPU
-            if torch.cuda.is_available():
-                data, target = data.cuda(), target.cuda()
+            data, target = to_device(data, target)
+
 
             # 1. forward pass: compute predicted outputs by passing inputs to the model
             logits  = model(data)
