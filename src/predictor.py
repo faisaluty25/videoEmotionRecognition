@@ -12,14 +12,20 @@ from .helpers import get_data_location
 
 class Predictor(nn.Module):
 
-    def __init__(self, model, class_names, mean:torch.Tensor, std: torch.Tensor):
+    def __init__(self, model, class_names, valid_im_size , mean:torch.Tensor, std: torch.Tensor):
         super().__init__()
 
         self.model = model.eval()
         self.class_names = class_names
-        self.sig=nn.Sigmoid()
+        self.soft=nn.Softmax(dim=1)
         self.mean=mean.mul_(255).view(-1,1,1)
         self.std=std.mul_(255).view(-1,1,1)
+        self.valid_im_size=valid_im_size
+        # self.transforms=self.transforms = nn.Sequential(
+        #     T.Resize([valid_im_size+2, ]),  # We use single int value inside a list due to torchscript type restrictions
+        #     T.CenterCrop(valid_im_size),
+        #     T.ConvertImageDtype(torch.float)
+        #     )
         # We use nn.Sequential and not nn.Compose because the former
         # is compatible with torch.script, while the latter isn't
 
@@ -27,13 +33,15 @@ class Predictor(nn.Module):
     def forward(self, x) -> torch.Tensor:
         with torch.no_grad():
             # 1. apply transforms
-            x =x[:,:,16:16+224,16:16+224]
+            # x =self.transforms(x)
+            im_deff= (x.shape[-1]-self.valid_im_size)//2
+            last_cut=x.shape[-1]-im_deff
+            x = x[:,:,im_deff:last_cut,im_deff:last_cut]
             x.sub_(self.mean).div_(self.std) 
             # 2. get the logits
             x  = self.model(x)
             # 3. apply softmax
-            x  = self.sig(x)
-
+            x  = self.soft(x)
             return x
 
 # class Predictor(nn.Module):

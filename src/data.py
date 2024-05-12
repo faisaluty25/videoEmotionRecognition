@@ -13,12 +13,17 @@ from torchvision.io import read_image
 from sklearn.model_selection import train_test_split
 import os
 
+train_im_size = 200
+valid_im_size = 230
+
+
 class  RAVDESSDataset(torch.utils.data.Dataset):
     def __init__(self,df, is_image=True, is_mel=True,transforms=None):
         self.df=df
         self.is_image = is_image
         self.is_mel = is_mel
         self.transforms = transforms
+        self.classes=list(df['class'].cat.categories)
 
 
 
@@ -84,8 +89,7 @@ def get_data_loaders(
     mean, std = compute_mean_and_std()
     print(f"Dataset mean: {mean}, std: {std}")
 
-    train_size=200
-    valid_size=230
+
     cutmix = T.CutMix(alpha=1.0 ,num_classes=num_classes)
     mixup = T.MixUp(alpha=0.2 ,num_classes=num_classes)
     cutmix_or_mixup = T.RandomChoice([cutmix, mixup])
@@ -95,8 +99,8 @@ def get_data_loaders(
             # T.RandomVerticalFlip(p=0.3),
             # T.RandomRotation(30),
 
-            T.Resize((train_size+2,train_size+2), antialias=True),
-            #T.RandomResizedCrop(train_size, antialias=True),
+            T.Resize((train_im_size+2,train_im_size+2), antialias=True),
+            #T.RandomResizedCrop(train_im_size, antialias=True),
             T.RandomHorizontalFlip(),
             T.TrivialAugmentWide(),
             #T.RandAugment(num_ops=3),
@@ -105,7 +109,7 @@ def get_data_loaders(
             #T.RandomAffine(degrees=(1, 70), translate=(0.1, 0.3), scale=(0.6, 1)),
             #T.RandomPerspective(distortion_scale=0.3, p=0.5),
             #T.RandomAutocontrast(),
-            T.CenterCrop(train_size),
+            T.CenterCrop(train_im_size),
             T.ToDtype(torch.float32, scale=True),
             T.Normalize(mean=mean, std=std),# the mean and std are already scaled(as helper.py) no need to rescale them
             T.RandomErasing(p=0.1),
@@ -115,8 +119,8 @@ def get_data_loaders(
         ]),
         "valid": T.Compose([
             T.ToImage(),
-            T.Resize((valid_size+2,valid_size+2),antialias=True),
-            T.CenterCrop(valid_size),
+            T.Resize((valid_im_size+2,valid_im_size+2),antialias=True),
+            T.CenterCrop(valid_im_size),
             T.ToDtype(torch.float32, scale=True),
             T.Normalize(mean=mean, std=std),
             
